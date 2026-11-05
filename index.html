@@ -2,26 +2,37 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; font-src 'self' data:; connect-src 'self' blob: data:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
 <title>PDF Werkstatt</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+<meta name="description" content="PDFs zusammenfügen, teilen, verkleinern, bearbeiten und unterschreiben – komplett im Browser, ohne Upload.">
+<meta name="theme-color" content="#f5f3ee" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#131311" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<meta name="apple-mobile-web-app-title" content="PDF Werkstatt">
+<link rel="preload" href="vendor/fonts/plus-jakarta-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<!-- Alle Bibliotheken liegen lokal in vendor/ – keine Anfragen an Dritte (siehe vendor/README.md) -->
+<script src="vendor/pdf-lib.min.js"></script>
+<script src="vendor/pdf.min.js"></script>
+<script src="vendor/jszip.min.js"></script>
+<script src="vendor/Sortable.min.js"></script>
 <style>
+@font-face{font-family:"Plus Jakarta Sans";font-style:normal;font-display:swap;font-weight:200 800;src:url(vendor/fonts/plus-jakarta-sans-latin-wght-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Plus Jakarta Sans";font-style:normal;font-display:swap;font-weight:200 800;src:url(vendor/fonts/plus-jakarta-sans-latin-ext-wght-normal.woff2) format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
 :root{
   --bg:#f5f3ee;--panel:#ffffff;--ink:#1c1b18;--muted:#6d695f;--line:#e5e1d7;--soft:#efece5;
-  --accent:#e0443e;--accent-h:#c93630;--accent-ink:#fff;--accent-soft:#fdeceb;
+  --accent:#d43d37;--accent-h:#b92f2a;--accent-ink:#fff;--accent-soft:#fdeceb;--accent-text:#b92f2a;--ok:#23824a;
   --shadow:0 1px 2px rgba(28,27,24,.05),0 6px 20px rgba(28,27,24,.06);
   --r:14px;--font:"Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
 }
 @media (prefers-color-scheme:dark){
-  :root{--bg:#131311;--panel:#1c1b19;--ink:#f2f0ea;--muted:#a29e94;--line:#2e2c28;--soft:#252420;--accent-soft:#3a1d1c;--shadow:0 1px 2px rgba(0,0,0,.3)}
+  :root{--bg:#131311;--panel:#1c1b19;--ink:#f2f0ea;--muted:#a29e94;--line:#2e2c28;--soft:#252420;--accent:#c4332d;--accent-h:#d8443e;--accent-soft:#3a1d1c;--accent-text:#ff8a84;--ok:#5cc98a;--shadow:0 1px 2px rgba(0,0,0,.3)}
 }
 *{box-sizing:border-box}
+:root{color-scheme:light dark}
 html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
 button,input,select{font:inherit;color:inherit}
 button{cursor:pointer}
@@ -34,7 +45,11 @@ header.top .wrap{display:flex;align-items:center;gap:14px;height:62px}
 .brand small{font-weight:500;color:var(--muted);font-size:13px;letter-spacing:0}
 .top .spacer{flex:1}
 .privacy{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
-.privacy svg{color:#2f9e5b}
+.privacy svg{color:var(--ok)}
+@media (max-width:520px){.privacy span{display:none}.privacy{border:1px solid var(--line);border-radius:99px;padding:6px}}
+.brand{border:0;background:none;padding:0;color:inherit}
+.brand:focus-visible,.btn:focus-visible,.ibtn:focus-visible,.tb:focus-visible,.back:focus-visible,.thumb:focus-visible,.pospick button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 
 /* Home */
 .hero{padding:44px 0 26px;text-align:center}
@@ -66,7 +81,8 @@ header.top .wrap{display:flex;align-items:center;gap:14px;height:62px}
 .btn.sm{padding:6px 10px;font-size:13px;border-radius:9px}
 .btn:disabled{opacity:.45;cursor:not-allowed}
 .work{display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start;padding-bottom:50px}
-@media (max-width:860px){.work{grid-template-columns:1fr}}
+@media (max-width:860px){.work{grid-template-columns:1fr;padding-bottom:96px}.side{position:static}
+  .side>.btn.primary.big{position:fixed;left:16px;right:16px;bottom:calc(14px + env(safe-area-inset-bottom));width:auto;z-index:30;box-shadow:0 10px 30px rgba(0,0,0,.25)}}
 .stage{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;min-height:320px}
 .side{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;position:sticky;top:16px;display:flex;flex-direction:column;gap:16px}
 .side h4{margin:0;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700}
@@ -102,26 +118,30 @@ input[type=color]{width:42px;height:36px;border:1px solid var(--line);border-rad
 @media (hover:none){.thumb .acts{opacity:1}}
 .ibtn{width:28px;height:28px;border-radius:8px;border:1px solid var(--line);background:var(--panel);display:grid;place-items:center;padding:0}
 .ibtn:hover{border-color:var(--ink)}
-.ibtn.danger:hover{color:var(--accent);border-color:var(--accent)}
+.ibtn.danger:hover{color:var(--accent-text);border-color:var(--accent)}
 .thumb.sel{outline:2px solid var(--accent);background:var(--accent-soft)}
-.thumb.add{border-style:dashed;cursor:pointer;justify-content:center;color:var(--muted);min-height:180px}
-.thumb.add:hover{border-color:var(--accent);color:var(--accent)}
+.thumb.add{border-style:dashed;cursor:pointer;justify-content:center;color:var(--muted);min-height:180px;width:100%;font:inherit}
+.thumb.add:hover,.thumb.add:focus-visible{border-color:var(--accent);color:var(--accent-text)}
+.thumb.moving{outline:2px dashed var(--accent);outline-offset:2px}
+.sortable-chosen{cursor:grabbing}
+.thumbs .thumb[data-id]:not(.add){cursor:grab}
 .thumb.ghost{opacity:.35}
 .thumb.blank .pg div{width:70%;aspect-ratio:1/1.414;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.18)}
 .ph{width:70%;aspect-ratio:1/1.414;background:linear-gradient(90deg,#0000000a,#00000014,#0000000a);background-size:200% 100%;animation:sh 1.2s infinite linear;border-radius:3px}
 @keyframes sh{to{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 .badge{position:absolute;z-index:3;top:8px;left:8px;background:var(--ink);color:var(--bg);font-size:11px;font-weight:700;border-radius:6px;padding:1px 6px}
 
 /* modal */
-.modal-bg{position:fixed;inset:0;background:rgba(20,19,17,.45);display:grid;place-items:center;z-index:50;padding:16px}
+.modal-bg{position:fixed;inset:0;background:rgba(20,19,17,.45);display:grid;place-items:center;z-index:65;padding:16px;overflow:auto}
 .modal{background:var(--panel);border-radius:20px;padding:26px;width:min(460px,100%);box-shadow:0 20px 60px rgba(0,0,0,.3);text-align:center}
 .modal.wide{width:min(680px,100%);text-align:left}
 .modal h3{margin:8px 0 4px;font-size:20px;letter-spacing:-.02em}
 .modal p{margin:0 0 18px;color:var(--muted)}
 .modal .acts{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
-.okmark{width:54px;height:54px;border-radius:50%;background:#e3f4ea;color:#2f9e5b;display:grid;place-items:center;margin:0 auto}
+.okmark{width:54px;height:54px;border-radius:50%;background:color-mix(in srgb,var(--ok) 16%,transparent);color:var(--ok);display:grid;place-items:center;margin:0 auto}
 .sizes{display:flex;justify-content:center;gap:10px;align-items:center;margin:-6px 0 18px;font-weight:600}
-.sizes .down{color:#2f9e5b}
+.sizes .down{color:var(--ok)}
 .busy{position:fixed;inset:0;background:rgba(245,243,238,.75);backdrop-filter:blur(2px);display:grid;place-items:center;z-index:60}
 @media (prefers-color-scheme:dark){.busy{background:rgba(19,19,17,.75)}}
 .busy-box{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px 26px;display:flex;gap:14px;align-items:center;box-shadow:var(--shadow);font-weight:600}
@@ -141,7 +161,7 @@ input[type=color]{width:42px;height:36px;border:1px solid var(--line);border-rad
 .ed-bar{position:sticky;top:0;z-index:20;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:8px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:14px;box-shadow:var(--shadow)}
 .tb{display:inline-flex;align-items:center;gap:6px;border:1px solid transparent;background:none;border-radius:9px;padding:7px 8px;font-size:13.5px;font-weight:600}
 .tb:hover{background:var(--soft)}
-.tb.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.tb.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-text)}
 .tb:disabled{opacity:.4}
 .sep{width:1px;height:24px;background:var(--line);margin:0 2px}
 @media (max-width:1100px){.tb span+span{display:none}}
@@ -181,21 +201,22 @@ input[type=color]{width:42px;height:36px;border:1px solid var(--line);border-rad
 <body>
 <header class="top">
   <div class="wrap">
-    <div class="brand" id="brand" title="Startseite">
-      <div class="brand-mark"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg></div>
+    <button type="button" class="brand" id="brand" aria-label="PDF Werkstatt – Startseite">
+      <div class="brand-mark" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg></div>
       PDF Werkstatt
-    </div>
+    </button>
     <div class="spacer"></div>
-    <div class="privacy"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Läuft lokal – keine Uploads</span></div>
+    <div class="privacy" title="Deine Dateien werden nur in diesem Browser verarbeitet"><svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Läuft lokal – keine Uploads</span></div>
   </div>
 </header>
 <main class="wrap" id="app"></main>
+<div class="sr-only" id="live" role="status" aria-live="polite"></div>
 <div class="foot">Alle Dateien werden ausschließlich in deinem Browser verarbeitet.</div>
 
 <script>
 /* ============ Basics ============ */
 const { PDFDocument, rgb, degrees, StandardFonts, LineCapStyle, BlendMode } = PDFLib;
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js';
 const DPR = Math.min(window.devicePixelRatio || 1, 2);
 const app = document.getElementById('app');
 const $ = (s, el = document) => el.querySelector(s);
@@ -211,6 +232,10 @@ function h(tag, props = {}, ...kids) {
     else el.setAttribute(k, v);
   }
   for (const k of kids.flat()) if (k != null && k !== false) el.append(k.nodeType ? k : document.createTextNode(k));
+  if (tag === 'button') {
+    if (!el.hasAttribute('type')) el.type = 'button';
+    if (el.title && !el.hasAttribute('aria-label') && !el.textContent.trim()) el.setAttribute('aria-label', el.title);
+  }
   return el;
 }
 const ICON = {
@@ -236,7 +261,7 @@ const ICON = {
   undo:'<path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/>', zin:'<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M11 8v6M8 11h6"/>', zout:'<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M8 11h6"/>',
   file:'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>'
 };
-const ic = (n, s = 18, sw = 2) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${ICON[n]}</svg>`;
+const ic = (n, s = 18, sw = 2) => `<svg aria-hidden="true" focusable="false" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${ICON[n]}</svg>`;
 const icEl = (n, s, sw) => h('span', { html: ic(n, s, sw), style: { display: 'inline-flex' } });
 
 const TOOLS = [
@@ -270,13 +295,50 @@ const readBytes = async f => new Uint8Array(await f.arrayBuffer());
 const isPdf = f => f.type === 'application/pdf' || /\.pdf$/i.test(f.name);
 const isImg = f => /^image\//.test(f.type) || /\.(jpe?g|png|webp|gif|bmp|avif)$/i.test(f.name);
 
-async function openPdfJs(bytes) { return pdfjsLib.getDocument({ data: bytes.slice(), isEvalSupported: false }).promise; }
-async function openLib(bytes) {
+const PDFJS_OPTS = { isEvalSupported: false, cMapUrl: 'vendor/cmaps/', cMapPacked: true, standardFontDataUrl: 'vendor/standard_fonts/' };
+const ENCRYPTED_MSG = name => `${name ? `„${name}“ ist` : 'Diese PDF ist'} verschlüsselt und kann hier nicht verändert werden. „PDF verkleinern“ (alle Stufen außer „Nur optimieren“) und „PDF in Bilder“ funktionieren trotzdem.`;
+// Opens a PDF with PDF.js. Asks for the password if needed. With { edit: true } encrypted files are
+// rejected right away, because pdf-lib cannot write them – better than failing after the user did all the work.
+async function openPdfJs(bytes, { name = '', edit = false } = {}) {
+  const task = pdfjsLib.getDocument({ ...PDFJS_OPTS, data: bytes.slice() });
+  task.onPassword = (update, reason) => {
+    askPassword(name, reason === pdfjsLib.PasswordResponses.INCORRECT_PASSWORD).then(pw => {
+      if (pw == null) { task.destroy(); } else update(pw);
+    });
+  };
+  let pdf;
+  try { pdf = await task.promise; }
+  catch (e) {
+    if (task.destroyed) throw new Error('Abgebrochen – ohne Passwort lässt sich die Datei nicht öffnen.');
+    if (e && e.name === 'InvalidPDFException') throw new Error(`${name ? `„${name}“ ist` : 'Das ist'} keine gültige PDF oder die Datei ist beschädigt.`);
+    throw new Error(`${name ? `„${name}“` : 'Die PDF'} konnte nicht gelesen werden${e && e.message ? ` (${e.message})` : ''}.`);
+  }
+  if (edit) {
+    let enc = false;
+    try { enc = !!(await pdf.getMetadata()).info?.EncryptFilterName; } catch {}
+    if (enc) { pdf.destroy(); throw new Error(ENCRYPTED_MSG(name)); }
+  }
+  return pdf;
+}
+async function openLib(bytes, name) {
   try { return await PDFDocument.load(bytes, { updateMetadata: false }); }
   catch (e) {
-    if (/encrypt/i.test(e.message)) throw new Error('Diese PDF ist passwortgeschützt bzw. verschlüsselt und kann nicht bearbeitet werden.');
-    throw new Error('Die PDF konnte nicht gelesen werden (' + e.message + ').');
+    if (/encrypt/i.test(e.message)) throw new Error(ENCRYPTED_MSG(name));
+    throw new Error(`${name ? `„${name}“` : 'Die PDF'} konnte nicht verarbeitet werden (${e.message}).`);
   }
+}
+function askPassword(name, wrong) {
+  return new Promise(res => {
+    const inp = h('input', { type: 'password', class: 'input', autocomplete: 'off', id: 'pdfpw' });
+    let done = false; const finish = v => { if (done) return; done = true; m.close(); res(v); };
+    const form = h('form', { onsubmit: e => { e.preventDefault(); finish(inp.value); } },
+      h('h3', {}, 'Passwort erforderlich'),
+      h('p', {}, wrong ? 'Das Passwort stimmt nicht. Versuch es noch einmal.' : `${name ? `„${name}“` : 'Diese PDF'} ist mit einem Passwort geschützt.`),
+      h('div', { class: 'field', style: { textAlign: 'left', marginBottom: '16px' } }, h('label', { for: 'pdfpw' }, 'Passwort'), inp),
+      h('div', { class: 'acts' }, h('button', { class: 'btn', onclick: () => finish(null) }, 'Abbrechen'), h('button', { class: 'btn primary', type: 'submit' }, 'Öffnen')));
+    const m = modal(form, false, () => finish(null));
+    setTimeout(() => inp.focus(), 30);
+  });
 }
 function hexToRgb(hex) { const n = parseInt(hex.slice(1), 16); return rgb(((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255); }
 function safeText(font, s) {
@@ -290,7 +352,8 @@ async function renderPageCanvas(pdf, n, { width, scale, extraRot = 0 } = {}) {
   const page = await pdf.getPage(n);
   const rotation = (page.rotate + extraRot + 360) % 360;
   const vp1 = page.getViewport({ scale: 1, rotation });
-  const sc = scale || (width / vp1.width);
+  // Cap the canvas size: iOS Safari refuses canvases above ~16.7 MP, Chrome above 16384 px per side.
+  const sc = Math.min(scale || (width / vp1.width), Math.sqrt(16e6 / (vp1.width * vp1.height)), 16000 / vp1.width, 16000 / vp1.height);
   const vp = page.getViewport({ scale: sc, rotation });
   const c = document.createElement('canvas');
   c.width = Math.max(1, Math.round(vp.width)); c.height = Math.max(1, Math.round(vp.height));
@@ -300,37 +363,58 @@ async function renderPageCanvas(pdf, n, { width, scale, extraRot = 0 } = {}) {
   page.cleanup();
   return c;
 }
+// Thumbnails are rendered lazily when they scroll into view – keeps big PDFs (hundreds of pages) fast and light.
+const thumbJobs = new WeakMap();
+const thumbIO = new IntersectionObserver(ents => ents.forEach(en => {
+  if (!en.isIntersecting) return;
+  thumbIO.unobserve(en.target); const job = thumbJobs.get(en.target); thumbJobs.delete(en.target); job && job();
+}), { rootMargin: '800px 0px' });
 function thumbInto(slot, pdf, n, gen, width = 150) {
-  queueRender(async () => {
+  thumbJobs.set(slot, () => queueRender(async () => {
     if (gen !== STATE.gen) return;
     const c = await renderPageCanvas(pdf, n, { width: width * DPR });
     if (gen !== STATE.gen) return;
+    c.setAttribute('aria-hidden', 'true');
     slot.innerHTML = ''; slot.append(c);
-  });
+  }));
+  thumbIO.observe(slot);
 }
 
 /* UI helpers */
 let toastT;
 function toast(msg, ms = 3200) {
   document.querySelectorAll('.toast').forEach(t => t.remove());
-  const t = h('div', { class: 'toast' }, msg); document.body.append(t);
-  clearTimeout(toastT); toastT = setTimeout(() => t.remove(), ms);
+  const t = h('div', { class: 'toast', 'aria-hidden': 'true' }, msg); document.body.append(t);
+  announce(msg);
+  clearTimeout(toastT); toastT = setTimeout(() => t.remove(), Math.max(ms, msg.length * 60));
 }
+function announce(msg) { const l = document.getElementById('live'); l.textContent = ''; setTimeout(() => { l.textContent = msg; }, 30); }
 function busy(text) {
   let b = $('.busy');
   if (text == null) { b && b.remove(); return; }
-  if (!b) { b = h('div', { class: 'busy' }, h('div', { class: 'busy-box' }, h('div', { class: 'spin' }), h('span'))); document.body.append(b); }
+  if (!b) { b = h('div', { class: 'busy', role: 'alert', 'aria-busy': 'true' }, h('div', { class: 'busy-box' }, h('div', { class: 'spin' }), h('span'))); document.body.append(b); }
   $('span', b).textContent = text;
 }
 const tick = () => new Promise(r => setTimeout(r, 0));
-function modal(content, wide) {
+// Accessible modal: role=dialog, focus moves in, Tab stays inside, Esc closes, focus returns afterwards.
+function modal(content, wide, onDismiss) {
+  const prevFocus = document.activeElement;
   const bg = h('div', { class: 'modal-bg' });
-  const m = h('div', { class: 'modal' + (wide ? ' wide' : '') }, content);
+  const m = h('div', { class: 'modal' + (wide ? ' wide' : ''), role: 'dialog', 'aria-modal': 'true', tabindex: '-1' }, content);
+  const title = m.querySelector('h3'); if (title) { title.id = title.id || uid(); m.setAttribute('aria-labelledby', title.id); }
   bg.append(m); document.body.append(bg);
-  bg.addEventListener('pointerdown', e => { if (e.target === bg) close(); });
-  const onKey = e => { if (e.key === 'Escape') close(); };
-  document.addEventListener('keydown', onKey);
-  function close() { bg.remove(); document.removeEventListener('keydown', onKey); }
+  bg.addEventListener('pointerdown', e => { if (e.target === bg) dismiss(); });
+  const focusables = () => [...m.querySelectorAll('button,input,select,textarea,a[href],[tabindex="0"]')].filter(x => !x.disabled && x.offsetParent !== null);
+  const onKey = e => {
+    if (e.key === 'Escape') { e.stopPropagation(); dismiss(); }
+    else if (e.key === 'Tab') { const f = focusables(); if (!f.length) return; const first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); } else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); } }
+  };
+  document.addEventListener('keydown', onKey, true);
+  requestAnimationFrame(() => { if (!m.contains(document.activeElement)) (m.querySelector('.btn.primary') || focusables()[0] || m).focus(); });
+  let closed = false;
+  function close() { if (closed) return; closed = true; bg.remove(); document.removeEventListener('keydown', onKey, true); prevFocus && prevFocus.isConnected && prevFocus.focus?.(); }
+  function dismiss() { onDismiss ? onDismiss() : close(); }
   return { close, el: m };
 }
 
@@ -385,6 +469,7 @@ function dropzone({ accept = 'application/pdf,.pdf', multiple = false, title, su
     input);
   const take = files => { const ok = [...files].filter(filter); if (!ok.length) { toast('Bitte passende Dateien wählen.'); return; } onFiles(multiple ? ok : [ok[0]]); };
   input.addEventListener('change', () => { take(input.files); input.value = ''; });
+  if (STATE.pendingFiles) { const pf = STATE.pendingFiles; STATE.pendingFiles = null; setTimeout(() => take(pf)); }
   box.addEventListener('dragover', e => { e.preventDefault(); box.classList.add('over'); });
   box.addEventListener('dragleave', () => box.classList.remove('over'));
   box.addEventListener('drop', e => { e.preventDefault(); box.classList.remove('over'); take(e.dataTransfer.files); });
@@ -399,8 +484,46 @@ function filePicker({ accept = 'application/pdf,.pdf', multiple = true, filter =
 function pageDrop(handler) {
   STATE.pageDrop = handler;
 }
-window.addEventListener('dragover', e => { if (STATE.pageDrop) e.preventDefault(); });
-window.addEventListener('drop', e => { if (STATE.pageDrop && !e.target.closest('.drop')) { e.preventDefault(); STATE.pageDrop([...e.dataTransfer.files]); } });
+// Always catch file drops – otherwise a file dropped next to the drop zone makes the browser leave the app.
+window.addEventListener('dragover', e => { if (e.dataTransfer && [...e.dataTransfer.types].includes('Files')) e.preventDefault(); });
+window.addEventListener('drop', e => {
+  if (!e.dataTransfer || !e.dataTransfer.files.length || e.target.closest('.drop')) return;
+  e.preventDefault();
+  if (STATE.pageDrop) STATE.pageDrop([...e.dataTransfer.files]);
+  else if (!location.hash.slice(1)) toast('Wähle zuerst ein Werkzeug aus.');
+  else { const dz = $('.drop'); dz && dz.dispatchEvent(new DragEvent('drop', { dataTransfer: e.dataTransfer, bubbles: true, cancelable: true })); }
+});
+
+// Labels: connect every <label> in a .field with its control (screen readers, click-to-focus).
+function linkLabels(root) {
+  root.querySelectorAll('.field > label:not([for])').forEach(l => {
+    if (l.querySelector('input,select,textarea')) return;
+    const nx = l.nextElementSibling;
+    if (nx && /^(INPUT|SELECT|TEXTAREA)$/.test(nx.tagName)) { nx.id = nx.id || uid(); l.htmlFor = nx.id; return; }
+    const fieldControls = l.parentElement.querySelectorAll(':scope > input, :scope > select, :scope > textarea');
+    if (fieldControls.length === 1) { const c = fieldControls[0]; c.id = c.id || uid(); l.htmlFor = c.id; }
+  });
+}
+new MutationObserver(() => linkLabels(app)).observe(app, { childList: true, subtree: true });
+
+// Keyboard reordering for sortable thumbnail grids: focus a tile, then Alt + arrow keys.
+function kbdSortable(grid, getArr, redraw) {
+  new MutationObserver(() => grid.querySelectorAll(':scope > [data-id]').forEach((el, i, all) => {
+    if (el.tabIndex !== 0) el.tabIndex = 0;
+    const label = el.dataset.label || el.querySelector('.cap b')?.textContent || '';
+    el.setAttribute('aria-label', `${label ? label + ', ' : ''}Position ${i + 1} von ${all.length}. Mit Alt + Pfeiltasten verschieben.`);
+  })).observe(grid, { childList: true });
+  grid.addEventListener('keydown', e => {
+    const tile = e.target.closest('[data-id]'); if (!tile || tile.parentElement !== grid || !e.altKey) return;
+    const d = { ArrowLeft: -1, ArrowUp: -1, ArrowRight: 1, ArrowDown: 1 }[e.key]; if (!d) return;
+    e.preventDefault();
+    const arr = getArr(); const i = arr.findIndex(x => x.id === tile.dataset.id); const j = i + d;
+    if (i < 0 || j < 0 || j >= arr.length) return;
+    [arr[i], arr[j]] = [arr[j], arr[i]]; redraw();
+    const moved = grid.querySelector(`[data-id="${tile.dataset.id}"]`); moved && moved.focus();
+    announce(`Position ${j + 1} von ${arr.length}`);
+  });
+}
 
 function toolShell(t, ...body) {
   app.innerHTML = '';
@@ -449,13 +572,14 @@ function toolMerge(t) {
   const dz = dropzone({ multiple: true, onFiles: add });
   toolShell(t, dz);
   stage.append(h('div', { class: 'toolbar-row' }, h('b', { class: 'grow' }, 'Reihenfolge'), h('button', { class: 'btn sm', onclick: () => files.sort((a, b) => a.name.localeCompare(b.name, 'de', { numeric: true })) && draw() }, 'A–Z sortieren')), grid);
-  new Sortable(grid, { animation: 150, filter: '.add', onMove: e => !e.related.classList.contains('add'), onEnd: () => { const ids = [...grid.querySelectorAll('[data-id]')].map(x => x.dataset.id); files.sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id)); draw(); } });
+  new Sortable(grid, { animation: 150, delay: 180, delayOnTouchOnly: true, filter: '.add', onMove: e => !e.related.classList.contains('add'), onEnd: () => { const ids = [...grid.querySelectorAll('[data-id]')].map(x => x.dataset.id); files.sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id)); draw(); } });
+  kbdSortable(grid, () => files, draw);
   async function add(list) {
     await runTask('Dateien werden geladen …', async () => {
       for (const f of list) {
         const bytes = await readBytes(f);
-        try { const pdf = await openPdfJs(bytes); files.push({ id: uid(), name: f.name, bytes, pdf, pages: pdf.numPages }); }
-        catch { toast(`„${f.name}“ konnte nicht gelesen werden.`); }
+        try { const pdf = await openPdfJs(bytes, { name: f.name, edit: true }); files.push({ id: uid(), name: f.name, bytes, pdf, pages: pdf.numPages }); }
+        catch (e) { toast(e.message, 6000); }
       }
     });
     if (files.length) { dz.replaceWith(work); pageDrop(fs => add(fs.filter(isPdf))); }
@@ -471,7 +595,7 @@ function toolMerge(t) {
         h('div', { class: 'acts' }, h('button', { class: 'ibtn danger', title: 'Entfernen', html: ic('x', 14, 2.4), onclick: () => { files.splice(files.indexOf(f), 1); draw(); } })),
         f.thumb, h('div', { class: 'cap', title: f.name }, h('b', {}, f.name)), h('div', { class: 'cap' }, `${f.pages} ${f.pages === 1 ? 'Seite' : 'Seiten'} · ${fmtSize(f.bytes.length)}`)));
     });
-    grid.append(h('div', { class: 'thumb add', onclick: () => filePicker({ onFiles: add }) }, h('div', { html: ic('plus', 28, 2) }), h('div', { class: 'cap' }, 'PDF hinzufügen')));
+    grid.append(h('button', { class: 'thumb add', onclick: () => filePicker({ onFiles: add }) }, h('div', { html: ic('plus', 28, 2) }), h('div', { class: 'cap' }, 'PDF hinzufügen')));
     const total = files.reduce((s, f) => s + f.pages, 0);
     info.textContent = `${files.length} Dateien · ${total} Seiten insgesamt`;
     btn.disabled = files.length < 2;
@@ -480,7 +604,7 @@ function toolMerge(t) {
     await runTask('Wird zusammengefügt …', async () => {
       const out = await PDFDocument.create();
       for (const f of files) {
-        const src = await openLib(f.bytes);
+        const src = await openLib(f.bytes, f.name);
         const pages = await out.copyPages(src, src.getPageIndices());
         pages.forEach(p => out.addPage(p));
       }
@@ -504,6 +628,11 @@ function parseRanges(str, max) {
   if (!out.length) throw new Error('Bitte mindestens einen Bereich angeben.');
   return out;
 }
+function defaultRanges(n) {
+  if (n < 2) return '1';
+  const mid = Math.ceil(n / 2), r = (a, b) => a === b ? `${a}` : `${a}-${b}`;
+  return `${r(1, mid)}, ${r(mid + 1, n)}`;
+}
 function toolSplit(t) {
   const gen = STATE.gen;
   let F = null; const selected = new Set();
@@ -511,16 +640,17 @@ function toolSplit(t) {
   toolShell(t, dz);
   async function load([f]) {
     let pdf; const bytes = await readBytes(f);
-    try { pdf = await openPdfJs(bytes); } catch { return toast('Die PDF konnte nicht gelesen werden.'); }
+    try { busy('Datei wird geöffnet …'); pdf = await openPdfJs(bytes, { name: f.name, edit: true }); } catch (e) { return toast(e.message, 6000); } finally { busy(null); }
     F = { name: f.name, bytes, pdf, n: pdf.numPages };
     const grid = h('div', { class: 'thumbs' });
     for (let i = 1; i <= F.n; i++) {
       const slot = h('div', { class: 'pg' }, h('div', { class: 'ph' }));
       thumbInto(slot, pdf, i, gen, 130);
-      const th = h('div', { class: 'thumb', style: { cursor: 'pointer' }, 'data-i': i - 1, onclick: () => { const k = i - 1; selected.has(k) ? selected.delete(k) : selected.add(k); th.classList.toggle('sel'); if (mode() !== 'pick') $('input[value=pick]', side).checked = true; upd(); } }, slot, h('div', { class: 'cap' }, h('b', {}, 'Seite ' + i)));
+      const toggle = () => { const k = i - 1; selected.has(k) ? selected.delete(k) : selected.add(k); th.classList.toggle('sel', selected.has(k)); th.setAttribute('aria-checked', selected.has(k)); if (mode() !== 'pick') $('input[value=pick]', side).checked = true; upd(); };
+      const th = h('div', { class: 'thumb', style: { cursor: 'pointer' }, 'data-i': i - 1, role: 'checkbox', 'aria-checked': 'false', tabindex: '0', 'aria-label': 'Seite ' + i, onclick: toggle, onkeydown: e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggle(); } } }, slot, h('div', { class: 'cap' }, h('b', {}, 'Seite ' + i)));
       grid.append(th);
     }
-    const ranges = h('input', { type: 'text', class: 'input', value: F.n > 1 ? `1-${Math.ceil(F.n / 2)}, ${Math.ceil(F.n / 2) + 1}-${F.n}` : '1', oninput: upd });
+    const ranges = h('input', { type: 'text', class: 'input', value: defaultRanges(F.n), oninput: upd });
     const merge1 = h('input', { type: 'checkbox' });
     const every = h('input', { type: 'number', min: 1, max: F.n, value: 1, class: 'input', oninput: upd });
     const btn = h('button', { class: 'btn primary big', onclick: run }, 'PDF teilen');
@@ -549,7 +679,7 @@ function toolSplit(t) {
     }
     async function run() {
       await runTask('Wird geteilt …', async () => {
-        const g = groups(); const src = await openLib(F.bytes); const bn = baseName(F.name);
+        const g = groups(); const src = await openLib(F.bytes, F.name); const bn = baseName(F.name);
         const outs = [];
         for (const idx of g) {
           const d = await PDFDocument.create(); (await d.copyPages(src, idx)).forEach(p => d.addPage(p));
@@ -577,23 +707,35 @@ function toolCompress(t) {
     { v: 'light', t: 'Leichte Komprimierung', d: 'Hohe Qualität, moderate Ersparnis (150 dpi)', dpi: 150, q: .8 },
     { v: 'mid', t: 'Empfohlen', d: 'Gute Qualität, deutlich kleiner (110 dpi)', dpi: 110, q: .62 },
     { v: 'strong', t: 'Starke Komprimierung', d: 'Kleinste Datei, sichtbar weicher (72 dpi)', dpi: 72, q: .45 },
-    { v: 'lossless', t: 'Nur optimieren', d: 'Text bleibt durchsuchbar, Ersparnis meist gering', dpi: 0 }];
+    { v: 'lossless', t: 'Nur optimieren', d: 'Text bleibt durchsuchbar, Ersparnis meist gering', dpi: 0 },
+    { v: 'custom', t: 'Eigene Einstellung', d: 'Auflösung und Bildqualität selbst wählen', custom: true }];
   const gray = h('input', { type: 'checkbox' });
+  const dpiOut = h('output', {}), qOut = h('output', {});
+  const showVals = () => { dpiOut.textContent = dpiIn.value + ' dpi'; qOut.textContent = qIn.value + ' %'; };
+  const dpiIn = h('input', { type: 'range', min: 50, max: 300, step: 10, value: 120, oninput: showVals });
+  const qIn = h('input', { type: 'range', min: 30, max: 95, step: 5, value: 70, oninput: showVals });
+  showVals();
+  const customBox = h('div', { class: 'field hidden' },
+    h('label', {}, 'Auflösung ', dpiOut), dpiIn,
+    h('label', {}, 'Bildqualität ', qOut), qIn,
+    h('div', { class: 'hint' }, 'Für Text reichen meist 100–150 dpi. Unter 60 % Qualität werden Kanten sichtbar unscharf.'));
   const info = h('div', { class: 'hint' });
   const btn = h('button', { class: 'btn primary big', onclick: run }, 'PDF verkleinern');
   const side = h('div', { class: 'side' }, h('h4', {}, 'Stufe'),
-    h('div', { class: 'seg' }, levels.map(l => h('label', { class: 'opt' }, h('input', { type: 'radio', name: 'lv', value: l.v, checked: l.v === 'mid' }), h('div', {}, h('b', {}, l.t), h('span', {}, l.d))))),
+    h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Stufe' }, levels.map(l => h('label', { class: 'opt' }, h('input', { type: 'radio', name: 'lv', value: l.v, checked: l.v === 'mid', onchange: () => customBox.classList.toggle('hidden', l.v !== 'custom') }), h('div', {}, h('b', {}, l.t), h('span', {}, l.d))))),
+    customBox,
     h('label', { class: 'chk' }, gray, 'In Graustufen umwandeln'),
-    h('div', { class: 'hint' }, 'Hinweis: Die Stufen 1–3 wandeln jede Seite in ein Bild um. Dadurch ist der Text danach nicht mehr markier- oder durchsuchbar.'),
+    h('div', { class: 'hint' }, 'Hinweis: Alle Stufen außer „Nur optimieren“ wandeln jede Seite in ein Bild um. Dadurch ist der Text danach nicht mehr markier- oder durchsuchbar.'),
     info, btn);
   const grid = h('div', { class: 'thumbs' });
-  new Sortable(grid, { animation: 150, filter: '.add', onMove: e => !e.related.classList.contains('add'), onEnd: () => { const ids = [...grid.querySelectorAll('[data-id]')].map(x => x.dataset.id); files.sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id)); draw(); } });
+  new Sortable(grid, { animation: 150, delay: 180, delayOnTouchOnly: true, filter: '.add', onMove: e => !e.related.classList.contains('add'), onEnd: () => { const ids = [...grid.querySelectorAll('[data-id]')].map(x => x.dataset.id); files.sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id)); draw(); } });
+  kbdSortable(grid, () => files, draw);
   async function add(list) {
     await runTask('Dateien werden geladen …', async () => {
       for (const f of list) {
         const bytes = await readBytes(f);
-        try { const pdf = await openPdfJs(bytes); files.push({ id: uid(), name: f.name, bytes, pdf, pages: pdf.numPages }); }
-        catch { toast(`„${f.name}“ konnte nicht gelesen werden.`); }
+        try { const pdf = await openPdfJs(bytes, { name: f.name }); files.push({ id: uid(), name: f.name, bytes, pdf, pages: pdf.numPages }); }
+        catch (e) { toast(e.message, 6000); }
       }
     });
     if (files.length && dz.isConnected) { dz.replaceWith(h('div', { class: 'work' }, h('div', { class: 'stage' }, h('div', { class: 'toolbar-row' }, h('b', { class: 'grow' }, 'Dateien')), grid), side)); pageDrop(fs => add(fs.filter(isPdf))); }
@@ -607,14 +749,14 @@ function toolCompress(t) {
         h('div', { class: 'acts' }, h('button', { class: 'ibtn danger', title: 'Entfernen', html: ic('x', 14, 2.4), onclick: () => { files.splice(files.indexOf(f), 1); draw(); } })),
         f.thumb, h('div', { class: 'cap', title: f.name }, h('b', {}, f.name)), h('div', { class: 'cap' }, `${f.pages} S. · ${fmtSize(f.bytes.length)}`)));
     });
-    grid.append(h('div', { class: 'thumb add', onclick: () => filePicker({ onFiles: add }) }, h('div', { html: ic('plus', 28, 2) }), h('div', { class: 'cap' }, 'PDF hinzufügen')));
+    grid.append(h('button', { class: 'thumb add', onclick: () => filePicker({ onFiles: add }) }, h('div', { html: ic('plus', 28, 2) }), h('div', { class: 'cap' }, 'PDF hinzufügen')));
     const total = files.reduce((s, f) => s + f.bytes.length, 0);
     info.textContent = `${files.length} ${files.length === 1 ? 'Datei' : 'Dateien'} · ${fmtSize(total)} insgesamt`;
     btn.textContent = files.length > 1 ? `${files.length} PDFs verkleinern` : 'PDF verkleinern';
     btn.disabled = !files.length;
   }
   async function compressOne(F, lv, label) {
-    if (!lv.dpi) { const d = await openLib(F.bytes); return d.save({ useObjectStreams: true }); }
+    if (!lv.dpi) { const d = await openLib(F.bytes, F.name); return d.save({ useObjectStreams: true }); }
     const pdf = F.pdf; const d = await PDFDocument.create();
     for (let i = 1; i <= pdf.numPages; i++) {
       busy(`${label}Seite ${i} von ${pdf.numPages} …`);
@@ -634,8 +776,9 @@ function toolCompress(t) {
   }
   async function run() {
     if (!files.length) return;
-    const lv = levels.find(l => l.v === $('input[name=lv]:checked', side).value);
-    if (!lv.dpi && gray.checked) toast('Graustufen gibt es nur bei den Stufen 1–3.');
+    let lv = levels.find(l => l.v === $('input[name=lv]:checked', side).value);
+    if (lv.custom) lv = { dpi: +dpiIn.value, q: +qIn.value / 100 };
+    if (!lv.dpi && gray.checked) toast('Graustufen gibt es nicht bei „Nur optimieren“.');
     await runTask('Wird verkleinert …', async () => {
       const res = [];
       for (const [k, F] of files.entries()) {
@@ -674,22 +817,23 @@ function toolOrganize(t) {
   const info = h('div', { class: 'hint' });
   const side = h('div', { class: 'side' },
     h('h4', {}, isRotate ? 'Drehen' : 'Organisieren'),
-    h('div', { class: 'hint' }, isRotate ? 'Fahre über eine Seite, um sie einzeln zu drehen – oder drehe alle auf einmal.' : 'Seiten per Drag & Drop verschieben. Über jeder Seite findest du Drehen und Löschen.'),
+    h('div', { class: 'hint' }, isRotate ? 'Fahre über eine Seite, um sie einzeln zu drehen – oder drehe alle auf einmal.' : 'Seiten per Drag & Drop verschieben (Tastatur: Seite anwählen, dann Alt + Pfeiltasten). Über jeder Seite findest du Drehen und Löschen.'),
     h('div', { class: 'row' }, h('button', { class: 'btn', onclick: () => rotAll(-90) }, icEl('rl', 16), 'Alle links'), h('button', { class: 'btn', onclick: () => rotAll(90) }, icEl('rr', 16), 'Alle rechts')),
     !isRotate ? h('button', { class: 'btn', onclick: () => { pages.push({ id: uid(), blank: true, rot: 0 }); draw(); } }, icEl('plus', 16), 'Leere Seite anhängen') : null,
     info,
     h('button', { class: 'btn primary big', onclick: run }, isRotate ? 'Gedreht speichern' : 'PDF speichern'));
-  new Sortable(grid, { animation: 150, filter: '.add,.ibtn', preventOnFilter: false, onMove: e => !e.related.classList.contains('add'), onEnd: () => { const ids = [...grid.querySelectorAll('[data-id]')].map(x => x.dataset.id); pages.sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id)); draw(); } });
+  new Sortable(grid, { animation: 150, delay: 180, delayOnTouchOnly: true, filter: '.add,.ibtn', preventOnFilter: false, onMove: e => !e.related.classList.contains('add'), onEnd: () => { const ids = [...grid.querySelectorAll('[data-id]')].map(x => x.dataset.id); pages.sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id)); draw(); } });
+  kbdSortable(grid, () => pages, draw);
   function rotAll(d) { pages.forEach(p => p.rot = (p.rot + d + 360) % 360); draw(); }
   async function add(list) {
     await runTask('Dateien werden geladen …', async () => {
       for (const f of list) {
         const bytes = await readBytes(f);
         try {
-          const pdf = await openPdfJs(bytes); const fi = files.length;
+          const pdf = await openPdfJs(bytes, { name: f.name, edit: true }); const fi = files.length;
           files.push({ name: f.name, bytes, pdf });
           for (let i = 0; i < pdf.numPages; i++) pages.push({ id: uid(), f: fi, i, rot: 0 });
-        } catch { toast(`„${f.name}“ konnte nicht gelesen werden.`); }
+        } catch (e) { toast(e.message, 6000); }
       }
     });
     if (files.length && dz.isConnected) { dz.replaceWith(h('div', { class: 'work' }, h('div', { class: 'stage' }, grid), side)); if (!isRotate) pageDrop(fs => add(fs.filter(isPdf))); }
@@ -711,7 +855,7 @@ function toolOrganize(t) {
         p.slot,
         h('div', { class: 'cap' }, h('b', {}, String(k + 1)), p.blank ? ' · Leer' : files.length > 1 ? ` · ${files[p.f].name}` : '')));
     });
-    if (!isRotate) grid.append(h('div', { class: 'thumb add', onclick: () => filePicker({ onFiles: add }) }, h('div', { html: ic('plus', 28, 2) }), h('div', { class: 'cap' }, 'PDF hinzufügen')));
+    if (!isRotate) grid.append(h('button', { class: 'thumb add', onclick: () => filePicker({ onFiles: add }) }, h('div', { html: ic('plus', 28, 2) }), h('div', { class: 'cap' }, 'PDF hinzufügen')));
     info.textContent = `${pages.length} Seiten`;
   }
   async function run() {
@@ -720,7 +864,7 @@ function toolOrganize(t) {
       const out = await PDFDocument.create(); const libs = {};
       for (const p of pages) {
         if (p.blank) { const prev = out.getPageCount() ? out.getPage(out.getPageCount() - 1).getSize() : { width: 595.28, height: 841.89 }; const np = out.addPage([prev.width, prev.height]); if (p.rot) np.setRotation(degrees(p.rot)); continue; }
-        libs[p.f] = libs[p.f] || await openLib(files[p.f].bytes);
+        libs[p.f] = libs[p.f] || await openLib(files[p.f].bytes, files[p.f].name);
         const [cp] = await out.copyPages(libs[p.f], [p.i]);
         const r = (cp.getRotation().angle + p.rot) % 360;
         cp.setRotation(degrees(r)); out.addPage(cp);
@@ -736,7 +880,7 @@ function toolWatermark(t) {
   toolShell(t, dz);
   async function load([f]) {
     const bytes = await readBytes(f); let pdf;
-    try { pdf = await openPdfJs(bytes); } catch { return toast('Die PDF konnte nicht gelesen werden.'); }
+    try { busy('Datei wird geöffnet …'); pdf = await openPdfJs(bytes, { name: f.name, edit: true }); } catch (e) { return toast(e.message, 6000); } finally { busy(null); }
     const base = await renderPageCanvas(pdf, 1, { width: 520 * DPR });
     const page1 = await pdf.getPage(1); const vp1 = page1.getViewport({ scale: 1 });
     const prev = h('canvas'); prev.width = base.width; prev.height = base.height; prev.style.width = '520px';
@@ -774,7 +918,7 @@ function toolWatermark(t) {
     async function run() {
       if (!txt.value.trim()) return toast('Bitte einen Text eingeben.');
       await runTask('Wasserzeichen wird gesetzt …', async () => {
-        const d = await openLib(bytes); const font = await d.embedFont(StandardFonts.HelveticaBold);
+        const d = await openLib(bytes, f.name); const font = await d.embedFont(StandardFonts.HelveticaBold);
         const st = safeText(font, txt.value); if (st.bad) toast('Einige Sonderzeichen werden von der PDF-Schrift nicht unterstützt und wurden ersetzt.');
         const sz = +size.value; const tw = font.widthOfTextAtSize(st.text, sz); const capH = sz * .7;
         for (const p of d.getPages()) {
@@ -810,7 +954,7 @@ function toolNumbers(t) {
   toolShell(t, dz);
   async function load([f]) {
     const bytes = await readBytes(f); let pdf;
-    try { pdf = await openPdfJs(bytes); } catch { return toast('Die PDF konnte nicht gelesen werden.'); }
+    try { busy('Datei wird geöffnet …'); pdf = await openPdfJs(bytes, { name: f.name, edit: true }); } catch (e) { return toast(e.message, 6000); } finally { busy(null); }
     const gen = STATE.gen; const N = pdf.numPages;
     let pos = 'bc';
     const pick = h('div', { class: 'pospick' }, ['tl', 'tc', 'tr', 'x1', 'x2', 'x3', 'bl', 'bc', 'br'].map(p => h('button', { class: (p[0] === 'x' ? 'mid' : '') + (p === pos ? ' on' : ''), 'data-p': p, onclick: e => { pos = p; pick.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.p === p)); preview(); } }, h('span'))));
@@ -834,7 +978,7 @@ function toolNumbers(t) {
     preview();
     async function run() {
       await runTask('Seitenzahlen werden eingefügt …', async () => {
-        const d = await openLib(bytes); const font = await d.embedFont(StandardFonts.Helvetica);
+        const d = await openLib(bytes, f.name); const font = await d.embedFont(StandardFonts.Helvetica);
         const size = +sz.value, m = +margin.value, f0 = Math.max(1, +from.value || 1) - 1;
         const pages = d.getPages(); const total = +start.value + (pages.length - f0) - 1;
         pages.forEach((p, i) => {
@@ -867,7 +1011,8 @@ function toolImg2Pdf(t) {
     h('div', { class: 'field' }, h('label', {}, 'Größe'), sizeSel), h('div', { class: 'field' }, h('label', {}, 'Ausrichtung'), orient),
     h('div', { class: 'row' }, h('div', { class: 'field' }, h('label', {}, 'Rand'), marg), h('div', { class: 'field' }, h('label', {}, 'Bildqualität'), qual)),
     h('button', { class: 'btn primary big', onclick: run }, 'PDF erstellen'));
-  new Sortable(grid, { animation: 150, filter: '.add', onMove: e => !e.related.classList.contains('add'), onEnd: () => { const ids = [...grid.querySelectorAll('[data-id]')].map(x => x.dataset.id); imgs.sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id)); draw(); } });
+  new Sortable(grid, { animation: 150, delay: 180, delayOnTouchOnly: true, filter: '.add', onMove: e => !e.related.classList.contains('add'), onEnd: () => { const ids = [...grid.querySelectorAll('[data-id]')].map(x => x.dataset.id); imgs.sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id)); draw(); } });
+  kbdSortable(grid, () => imgs, draw);
   STATE.cleanup = () => imgs.forEach(i => URL.revokeObjectURL(i.url));
   async function add(list) {
     for (const f of list) {
@@ -881,9 +1026,9 @@ function toolImg2Pdf(t) {
   function draw() {
     grid.innerHTML = '';
     imgs.forEach((m, i) => grid.append(h('div', { class: 'thumb', 'data-id': m.id }, h('span', { class: 'badge' }, String(i + 1)),
-      h('div', { class: 'acts' }, h('button', { class: 'ibtn danger', html: ic('x', 14, 2.4), onclick: () => { imgs.splice(imgs.indexOf(m), 1); URL.revokeObjectURL(m.url); draw(); } })),
+      h('div', { class: 'acts' }, h('button', { class: 'ibtn danger', title: 'Entfernen', html: ic('x', 14, 2.4), onclick: () => { imgs.splice(imgs.indexOf(m), 1); URL.revokeObjectURL(m.url); draw(); } })),
       h('div', { class: 'pg' }, h('img', { src: m.url, alt: '' })), h('div', { class: 'cap', title: m.f.name }, m.f.name))));
-    grid.append(h('div', { class: 'thumb add', onclick: () => filePicker({ accept: 'image/*', filter: isImg, onFiles: add }) }, h('div', { html: ic('plus', 28, 2) }), h('div', { class: 'cap' }, 'Bilder hinzufügen')));
+    grid.append(h('button', { class: 'thumb add', onclick: () => filePicker({ accept: 'image/*', filter: isImg, onFiles: add }) }, h('div', { html: ic('plus', 28, 2) }), h('div', { class: 'cap' }, 'Bilder hinzufügen')));
   }
   async function run() {
     if (!imgs.length) return;
@@ -922,7 +1067,7 @@ function toolPdf2Img(t) {
   toolShell(t, dz);
   async function load([f]) {
     const bytes = await readBytes(f); let pdf;
-    try { pdf = await openPdfJs(bytes); } catch { return toast('Die PDF konnte nicht gelesen werden.'); }
+    try { busy('Datei wird geöffnet …'); pdf = await openPdfJs(bytes, { name: f.name }); } catch (e) { return toast(e.message, 6000); } finally { busy(null); }
     const gen = STATE.gen; const N = pdf.numPages;
     const side = h('div', { class: 'side' }, h('h4', {}, 'Export'),
       h('div', { class: 'seg' },
@@ -960,8 +1105,8 @@ function toolEdit(t) {
   const E = { mode: 'select', els: [], undo: [], sel: null, color: '#1a1a1a', size: 14, penW: 2.5, zoom: 1, pages: [] };
   async function load([f]) {
     const bytes = await readBytes(f); let pdf;
-    try { pdf = await openPdfJs(bytes); } catch { return toast('Die PDF konnte nicht gelesen werden.'); }
-    try { await openLib(bytes); } catch (e) { return toast(e.message, 5000); }
+    try { busy('Datei wird geöffnet …'); pdf = await openPdfJs(bytes, { name: f.name, edit: true }); } catch (e) { return toast(e.message, 6000); } finally { busy(null); }
+    try { await openLib(bytes, f.name); } catch (e) { return toast(e.message, 5000); }
     Object.assign(E, { bytes, pdf, name: f.name });
     for (let i = 1; i <= pdf.numPages; i++) { const p = await pdf.getPage(i); E.pages.push({ vp1: p.getViewport({ scale: 1 }), rot: p.rotate }); }
     buildUI();
@@ -1213,7 +1358,7 @@ function toolEdit(t) {
   async function exportPdf() {
     document.activeElement?.blur?.();
     await runTask('PDF wird gespeichert …', async () => {
-      const d = await openLib(E.bytes); const font = await d.embedFont(StandardFonts.Helvetica);
+      const d = await openLib(E.bytes, E.name); const font = await d.embedFont(StandardFonts.Helvetica);
       const cache = new Map(); let bad = false;
       for (const el of E.els) {
         const pg = d.getPage(el.page); const { vp1, rot } = E.pages[el.page];
@@ -1248,6 +1393,18 @@ function toolEdit(t) {
 }
 
 route();
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(e => console.warn('Offline-Modus nicht verfügbar:', e)));
+}
+// Installed app opened via "Öffnen mit …": one PDF goes to the editor, several to "Zusammenfügen".
+if ('launchQueue' in window) {
+  launchQueue.setConsumer(async params => {
+    if (!params.files || !params.files.length) return;
+    STATE.pendingFiles = await Promise.all(params.files.map(fh => fh.getFile()));
+    const target = STATE.pendingFiles.length > 1 ? 'merge' : 'edit';
+    if (location.hash.slice(1) === target) route(); else location.hash = target;
+  });
+}
 </script>
 </body>
 </html>
