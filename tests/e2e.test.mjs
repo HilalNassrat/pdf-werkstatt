@@ -147,3 +147,50 @@ test('Handy (390 px): kein horizontales Scrollen auf Start und im Editor', async
   assert.deepEqual(problems, []);
   await page.close();
 });
+
+test('Offline: nach dem ersten Besuch funktioniert die App ohne Netz', async () => {
+  const ctx = await browser.newContext();
+  const page = await ctx.newPage();
+  await page.goto(server.url);
+  await page.evaluate(() => navigator.serviceWorker.ready);
+  await page.reload(); await page.evaluate(() => navigator.serviceWorker.ready);
+  await ctx.setOffline(true);
+  await page.goto(server.url + '#merge');
+  await page.waitForFunction(() => window.PDFLib && window.pdfjsLib);
+  await page.locator('.drop input[type=file]').setInputFiles([join(FX, 'a.pdf'), join(FX, 'b.pdf')]);
+  await page.locator('.thumb canvas').first().waitFor();
+  await ctx.close();
+});
+
+test('Beschädigte PDF: keine Script-Fehler', async () => {
+  const { page, problems } = await open('merge');
+  await upload(page, 'broken.pdf', 'a.pdf');
+  await page.waitForTimeout(1500);
+  assert.deepEqual(problems.filter(p => p.startsWith('pageerror')), []);
+  await page.close();
+});
+
+test('Bearbeiten: Text einfügen und speichern', async () => {
+  const { page, problems } = await open('edit');
+  await upload(page, 'a.pdf');
+  const pg = page.locator('.epage').first(); await pg.waitFor();
+  await page.getByRole('button', { name: 'Text' }).click();
+  await pg.click({ position: { x: 100, y: 120 } });
+  await page.keyboard.type('Hallo Prüfung');
+  await page.getByRole('button', { name: 'Speichern' }).click();
+  const out = await download(page);
+  assert.equal((await PDFLib.PDFDocument.load(out)).getPageCount(), 3);
+  assert.deepEqual(problems, []);
+  await page.close();
+});
+
+for (const [tool, btn] of [['watermark', 'Wasserzeichen anwenden'], ['numbers', 'Seitenzahlen einfügen'], ['rotate', 'Gedreht speichern']]) {
+  test(`${tool}: Ergebnis lässt sich laden`, async () => {
+    const { page, problems } = await open(tool);
+    await upload(page, 'a.pdf');
+    await page.getByRole('button', { name: btn }).click();
+    assert.equal((await PDFLib.PDFDocument.load(await download(page))).getPageCount(), 3);
+    assert.deepEqual(problems, []);
+    await page.close();
+  });
+}
